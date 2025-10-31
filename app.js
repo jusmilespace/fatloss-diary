@@ -1,32 +1,32 @@
-/* ===== Ju Smile 温脂日誌 v1.3 ===== */
-const APP_VERSION = 'v1.3';
+/* ===== Ju Smile 減脂日誌 app.js — 完整覆蓋版 (with 單位換算 + 常用組合) ===== */
+const APP_VERSION = 'v1.4';
 const $id = (x)=>document.getElementById(x);
 const today = ()=> new Date().toISOString().slice(0,10);
 if ($id('appVer')) $id('appVer').textContent = APP_VERSION;
 
-/* ---------- 本機儲存 ---------- */
+/* ---------------- 本機儲存 ---------------- */
 const STORE_KEY = 'jusmile-days';
 function readStore(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'{}'); }catch(e){ return {}; } }
 function writeStore(obj){ localStorage.setItem(STORE_KEY, JSON.stringify(obj||{})); }
 function getDay(d){ const db=readStore(); return db[d] || {foods:[], exercises:[]}; }
 function saveDay(d, day){ const db=readStore(); db[d]=day; writeStore(db); }
 
-/* ---------- 目標/體重 ---------- */
+/* ---------------- 目標/體重 ---------------- */
 const CAL_KEY='jusmile-cal-target', PRO_KEY='jusmile-pro-target', WT_KEY='jusmile-user-weight';
 const readNum=(k)=>{ const v=localStorage.getItem(k); return v?parseFloat(v):null; };
-const writeNum=(k,v)=>localStorage.setItem(k, String(v||''));
-function readWeight(){ const v=localStorage.getItem(WT_KEY); return v?parseFloat(v):null; }
-function writeWeight(kg){ localStorage.setItem(WT_KEY, String(kg||'')); }
+const writeNum=(k,v)=>localStorage.setItem(k, String(v??''));
+const readWeight=()=>{ const v=localStorage.getItem(WT_KEY); return v?parseFloat(v):null; };
+const writeWeight=(kg)=>localStorage.setItem(WT_KEY, String(kg??''));
 
-/* ---------- 工具：正規化（搜尋/比對用） ---------- */
+/* ---------------- 工具 ---------------- */
 function normalize(inp){
   if (!inp) return '';
-  const z2h = inp.replace(/[\uFF01-\uFF5E]/g, ch=> String.fromCharCode(ch.charCodeAt(0)-0xFEE0))
-                 .replace(/\u3000/g, ' ');
+  const z2h = inp.replace(/[\uFF01-\uFF5E]/g, ch=> String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/\u3000/g, ' ');
   return z2h.trim().toLowerCase().replace(/\s+/g,'');
 }
+const ALLOWED_UNITS = ['g','ml','個','碗','片','湯匙','張','粒','杯'];
 
-/* ---------- TYPE_TABLE（可被 CSV 覆蓋） ---------- */
+/* ---------------- TYPE TABLE（可 CSV 覆蓋） ---------------- */
 let TYPE_TABLE = {
   '全穀雜糧類':            { kcal:70,  protein:2,   carb:15,  fat:0 },
   '豆魚蛋肉類（低脂）':    { kcal:55,  protein:7,   carb:0,   fat:2 },
@@ -46,14 +46,15 @@ let TYPE_TABLE = {
 const TYPE_TABLE_KEY='jusmile-type-table', TYPE_URL_KEY='jusmile-type-url';
 (function initTypeFromCache(){ const x=localStorage.getItem(TYPE_TABLE_KEY); if(x){ try{ TYPE_TABLE=JSON.parse(x);}catch{} } })();
 
-/* ---------- UNIT_MAP（可被 CSV 覆蓋；支援 alias） ---------- */
+/* ---------------- UNIT_MAP（可 CSV 覆蓋；含 alias/單位→份量） ---------------- */
 let UNIT_MAP = [
   { name:'白飯', alias:['米飯','飯','rice'], type:'全穀雜糧類', unit_qty:1, unit:'碗', servings:4, note:'1碗≈200g; 50g=1份' },
   { name:'糙米飯', alias:['糙米','brown rice'], type:'全穀雜糧類', unit_qty:1, unit:'碗', servings:4 },
+  { name:'白飯 100g', alias:['飯100g'], type:'全穀雜糧類', unit_qty:100, unit:'g', servings:2 },
   { name:'吐司', alias:['土司','白吐司','toast'], type:'全穀雜糧類', unit_qty:1, unit:'片', servings:1 },
   { name:'地瓜', alias:['番薯','甘薯','sweet potato'], type:'全穀雜糧類', unit_qty:100, unit:'g', servings:1.5 },
-  { name:'燙青菜(熟)', alias:['青菜','燙青菜','蔬菜'], type:'蔬菜類', unit_qty:0.5, unit:'碗', servings:1 },
   { name:'香蕉', alias:['banana'], type:'水果類', unit_qty:1, unit:'根', servings:1 },
+  { name:'燙青菜(熟)', alias:['青菜','燙青菜','蔬菜'], type:'蔬菜類', unit_qty:0.5, unit:'碗', servings:1 },
   { name:'雞胸肉', alias:['雞肉','雞柳','chicken breast'], type:'豆魚蛋肉類（低脂）', unit_qty:100, unit:'g', servings:3 },
   { name:'雞蛋', alias:['蛋','hen egg','egg'], type:'豆魚蛋肉類（中脂）', unit_qty:1, unit:'顆', servings:1 },
   { name:'板豆腐', alias:['豆腐','嫩豆腐','tofu'], type:'豆魚蛋肉類（低脂）', unit_qty:1, unit:'塊', servings:1.5 },
@@ -67,7 +68,7 @@ let UNIT_MAP = [
 const UNIT_MAP_KEY='jusmile-unit-map', UNIT_URL_KEY='jusmile-unit-url';
 (function initUnitFromCache(){ const x=localStorage.getItem(UNIT_MAP_KEY); if(x){ try{ UNIT_MAP=JSON.parse(x);}catch{} } })();
 
-/* ---------- FOOD_DB（精準品項；支援 alias；可被 CSV 覆蓋） ---------- */
+/* ---------------- FOOD_DB（精準品項；可 CSV 覆蓋） ---------------- */
 let FOOD_DB = [
   { name:'雞胸肉 100g', alias:['雞胸肉','chicken breast 100g'], kcal:165, protein:31, carb:0, fat:3.6 },
   { name:'無糖豆漿 300ml', alias:['無糖豆漿','soy milk 300ml'], kcal:90, protein:9, carb:9, fat:3 },
@@ -77,7 +78,7 @@ let FOOD_DB = [
 const FOOD_DB_KEY='jusmile-food-db', FOOD_URL_KEY='jusmile-food-url';
 (function initFoodFromCache(){ const x=localStorage.getItem(FOOD_DB_KEY); if(x){ try{ FOOD_DB=JSON.parse(x);}catch{} } })();
 
-/* ---------- CSV 解析 ---------- */
+/* ---------------- CSV 解析 / 同步 ---------------- */
 function parseCSV(text){
   const lines=text.trim().split(/\r?\n/);
   const header=lines.shift().split(',').map(s=>s.trim());
@@ -131,13 +132,7 @@ function parseFoodCSV(text){
 }
 async function fetchText(url){ const r=await fetch(url,{cache:'no-store'}); return await r.text(); }
 
-/* ---------- 清單（datalist 改為 typeahead） ---------- */
-function rebuildFoodList(){ /* 仍保留，現在候選由下方 typeahead 使用 */
-  /* no-op render; 由 getAllFoodCandidates() 動態取得 */
-}
-
-/* ======= 搜尋自動完成（Typeahead） ======= */
-let taActiveIndex = -1;
+/* ---------------- Autocomplete / Typeahead ---------------- */
 function getAllFoodCandidates() {
   const names = new Set();
   FOOD_DB.forEach(x=>{ names.add(x.name); (x.alias||[]).forEach(a=>names.add(a)); });
@@ -157,7 +152,7 @@ function rankCandidates(query, list) {
     let s = 0;
     if (n.startsWith(q)) s += 40;
     else if (n.includes(q)) s += 20;
-    // 子序列模糊
+    // 模糊子序列
     let i=0; for (const ch of q){ const p=n.indexOf(ch,i); if(p===-1){ i=-1; break; } i=p+1; }
     if (i !== -1) s += 8;
     if (isFood(name)) s += 6;
@@ -175,6 +170,7 @@ function highlightOnce(text, query){
   const m = text.match(re); if(!m) return text;
   return text.replace(re, `<span class="typeahead-mark">${m[0]}</span>`);
 }
+let taActiveIndex = -1;
 function renderTypeahead(query){
   const panel = $id('foodSuggest'); if(!panel) return;
   const input = $id('foodName');
@@ -235,43 +231,45 @@ $id('foodName')?.addEventListener('input', debounce(()=>{
   renderTypeahead(q);
   rebuildUnitOptionsFor(q);
 }, 120));
-// 點外面就關閉建議
 document.addEventListener('click', (e)=>{
   const p=$id('foodSuggest'), box=$id('foodName')?.closest('.typeahead');
   if (!p || !box) return;
   if (!box.contains(e.target)) p.hidden = true;
 });
 
-/* ---------- 單位選項生成（支援 alias） ---------- */
+/* ---------------- 單位選項（自動 + 固定） ---------------- */
 function rebuildUnitOptionsFor(name){
   const sel = $id('foodUnit'); const hint = $id('unitHint');
   if(!sel) return;
-  sel.innerHTML = '<option value="">（請先選食物，再選單位）</option>';
-  if(hint) hint.textContent = '';
+  sel.innerHTML = '<option value="">選擇單位</option>';
+  if(hint) hint.textContent = '輸入名稱時若匹配資料庫，會自動帶出可用單位並換算份量';
   if(!name) return;
 
   const key = normalize(name);
-  const rows = UNIT_MAP
+  let rows = UNIT_MAP
     .map((r,i)=>({...r,_i:i}))
     .filter(r=>{
       const hitByName  = normalize(r.name) === key || normalize(r.name).includes(key);
       const hitByAlias = Array.isArray(r.alias) && r.alias.some(a=> normalize(a).includes(key) || normalize(a)===key);
-      return hitByName || hitByAlias;
+      return (hitByName || hitByAlias) && ALLOWED_UNITS.includes(r.unit);
     });
 
   if(!rows.length) return;
 
+  const seen = new Set();
   rows.forEach(r=>{
+    if (seen.has(r.unit)) return;
+    seen.add(r.unit);
     const opt=document.createElement('option');
     opt.value=String(r._i);
-    const aliasTxt = r.alias && r.alias.length ? `（別名：${r.alias.slice(0,3).join('、')}…）` : '';
-    opt.textContent=`每 ${r.unit_qty}${r.unit} = ${r.servings} 份（${r.type}）${aliasTxt}`;
+    opt.textContent = `${r.unit}（每 ${r.unit_qty}${r.unit} ≈ ${r.servings} 份｜${r.type}）`;
     sel.appendChild(opt);
   });
-  if(hint) hint.textContent='選了單位後，會用「數量×單位換算」計算';
+
+  if(hint) hint.textContent='已帶出單位；變更「數量/單位」會自動換算計算份量與營養';
 }
 
-/* ---------- 查找 & 計算 ---------- */
+/* ---------------- 計算 ---------------- */
 function lookupFoodPrecise(name){
   const n = normalize(name);
   return FOOD_DB.find(f=>{
@@ -291,7 +289,7 @@ function calcByTypeServings(typeName, servings){
   };
 }
 
-/* ---------- 自動帶入（單位換算優先 → 精準 → Type×份量） ---------- */
+/* ---------------- 自動帶入（單位換算 → 精準 → Type×份量） ---------------- */
 function tryAutofill(){
   const name = $id('foodName').value.trim();
   const qty  = parseFloat($id('foodQty').value)||1;
@@ -301,7 +299,7 @@ function tryAutofill(){
   const selIdx = unitSel && unitSel.value ? parseInt(unitSel.value, 10) : NaN;
   if (!isNaN(selIdx) && UNIT_MAP[selIdx]){
     const row = UNIT_MAP[selIdx];
-    const totalServings = (row.servings || 0) * qty;
+    const totalServings = (row.servings || 0) * qty; // 計算份量
     const est = calcByTypeServings(row.type, totalServings);
     if(est){
       $id('foodType').value      = row.type;
@@ -341,7 +339,7 @@ function tryAutofill(){
 });
 $id('btnAutoFill')?.addEventListener('click', tryAutofill);
 
-/* ---------- 加入/刪除 食物 ---------- */
+/* ---------------- 食物紀錄 新增/刪除 ---------------- */
 function addFood(){
   const meal=''; // 可擴充餐別
   const name=$id('foodName').value.trim()||'(未命名)';
@@ -375,7 +373,7 @@ window.delFood = (i)=>{
   day.foods.splice(i,1); saveDay(d,day); render();
 }
 
-/* ---------- 運動：DB、計算、紀錄 ---------- */
+/* ---------------- 運動紀錄 ---------------- */
 let EX_DB = [
   {name:'健走（輕鬆）', met:2.8, note:'~4 km/h'},
   {name:'快走', met:3.5, note:'~5–6 km/h'},
@@ -401,13 +399,11 @@ $id('exName')?.addEventListener('change', ()=>{
   const hit=EX_DB.find(x=>x.name===nm) || EX_DB.find(x=>norm(x.name).includes(norm(nm)));
   if(hit && $id('exMET')) $id('exMET').value=hit.met;
 });
-
 function calcExKcal(met,kg,mins){
   const M=parseFloat(met)||0, W=parseFloat(kg)||0, T=parseFloat(mins)||0;
   if(!M||!W||!T) return 0;
   return Math.round(M*3.5*W/200*T);
 }
-
 $id('btnAddEx')?.addEventListener('click', ()=>{
   const nm=$id('exName').value.trim();
   const met=parseFloat($id('exMET').value)||0;
@@ -434,7 +430,55 @@ window.delEx = (i)=>{
   day.exercises.splice(i,1); saveDay(d,day); render();
 }
 
-/* ---------- 同步 CSV（TYPE/UNIT/FOOD） ---------- */
+/* ---------------- 常用食物組合（本機） ---------------- */
+const PRESET_KEY = 'jusmile-presets';
+function readPresets(){ try{return JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');}catch{return [];} }
+function writePresets(arr){ localStorage.setItem(PRESET_KEY, JSON.stringify(arr||[])); }
+
+function renderPresets(){
+  const tb = $id('presetTable'); if(!tb) return;
+  const presets = readPresets();
+  tb.innerHTML = '';
+  presets.forEach((p,idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.name}</td><td>${p.items.length}</td>
+      <td>
+        <button class="btn-ghost" onclick="applyPreset(${idx})">加入今天</button>
+        <button class="btn-danger" onclick="delPreset(${idx})">刪除</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+window.applyPreset = (i)=>{
+  const presets = readPresets(); const p = presets[i]; if(!p) return;
+  const d=today(); const day=getDay(d);
+  p.items.forEach(x=> day.foods.push({...x, t:Date.now()}));
+  saveDay(d,day); render();
+  alert(`已加入「${p.name}」到今天`);
+};
+window.delPreset = (i)=>{
+  const arr=readPresets(); arr.splice(i,1); writePresets(arr); renderPresets();
+};
+$id('btnSavePreset')?.addEventListener('click', ()=>{
+  const name = ($id('presetName')?.value||'').trim();
+  if(!name){ alert('請輸入組合名稱'); return; }
+  const d=today(); const day=getDay(d);
+  if(!day.foods || !day.foods.length){ alert('今天沒有飲食明細可保存'); return; }
+  const items = day.foods.map(({meal,name,kcal,protein,carb,fat,type,servings})=>({meal,name,kcal,protein,carb,fat,type,servings}));
+  const arr = readPresets();
+  const idx = arr.findIndex(p=>p.name===name);
+  if(idx>-1) arr[idx] = {name, items, updated:Date.now()};
+  else arr.push({name, items, updated:Date.now()});
+  writePresets(arr);
+  if ($id('presetName')) $id('presetName').value='';
+  renderPresets();
+  alert('已保存為常用組合');
+});
+$id('btnClearPresets')?.addEventListener('click', ()=>{
+  if(confirm('確定清空所有常用組合？')){ writePresets([]); renderPresets(); }
+});
+
+/* ---------------- CSV 同步按鈕 ---------------- */
 $id('btnSyncTypeCsv')?.addEventListener('click', async ()=>{
   const url=$id('typeCsvUrl').value.trim(); if(!url){ alert('請貼上 CSV 連結'); return; }
   try{ const txt=await fetchText(url); const tbl=parseTypeCSV(txt);
@@ -445,7 +489,7 @@ $id('btnSyncUnitCsv')?.addEventListener('click', async ()=>{
   const url=$id('unitCsvUrl').value.trim(); if(!url){ alert('請貼上 CSV 連結'); return; }
   try{ const txt=await fetchText(url); const rows=parseUnitCSV(txt);
     UNIT_MAP=rows; localStorage.setItem(UNIT_MAP_KEY, JSON.stringify(rows)); localStorage.setItem(UNIT_URL_KEY,url);
-    alert('同步完成（單位換算）'); }catch(e){ alert('同步失敗：'+e.message); }
+    alert('同步完成（單位換算）'); rebuildUnitOptionsFor($id('foodName')?.value||''); }catch(e){ alert('同步失敗：'+e.message); }
 });
 $id('btnSyncFoodCsv')?.addEventListener('click', async ()=>{
   const url=$id('foodCsvUrl').value.trim(); if(!url){ alert('請貼上 CSV 連結'); return; }
@@ -453,14 +497,14 @@ $id('btnSyncFoodCsv')?.addEventListener('click', async ()=>{
     FOOD_DB=rows; localStorage.setItem(FOOD_DB_KEY, JSON.stringify(rows)); localStorage.setItem(FOOD_URL_KEY,url);
     alert('同步完成（食物庫）'); }catch(e){ alert('同步失敗：'+e.message); }
 });
-// 還原已存的 URL（若有）
+// 還原 URL
 ['typeCsvUrl','unitCsvUrl','foodCsvUrl'].forEach(id=>{
   const el=$id(id); if(!el) return;
   const key = id==='typeCsvUrl'?TYPE_URL_KEY : (id==='unitCsvUrl'?UNIT_URL_KEY : FOOD_URL_KEY);
   const v=localStorage.getItem(key)||''; if(v) el.value=v;
 });
 
-/* ---------- 渲染 ---------- */
+/* ---------------- 渲染 ---------------- */
 function sumFoods(day){ let kcal=0,p=0,c=0,f=0; (day.foods||[]).forEach(x=>{kcal+=+x.kcal||0; p+=+x.protein||0; c+=+x.carb||0; f+=+x.fat||0;}); return {kcal,p,c,f}; }
 function sumExercises(day){ let kcal=0; (day.exercises||[]).forEach(e=>kcal+=+e.kcal||0); return {kcal}; }
 
@@ -505,9 +549,8 @@ function render(){
 
   updateCalorieBar(net, readNum(CAL_KEY)||0);
 }
-render();
 
-/* ---------- 保存目標/體重 ---------- */
+/* ---------------- 儲存目標/體重 ---------------- */
 $id('btnSaveTargets')?.addEventListener('click', ()=>{
   const cal=parseFloat($id('setCal')?.value)||0;
   const pro=parseFloat($id('setProtein')?.value)||0;
@@ -519,7 +562,10 @@ $id('btnSaveTargets')?.addEventListener('click', ()=>{
   alert('已保存');
 });
 
-/* ---------- 初始事件 ---------- */
+/* ---------------- 初始化 ---------------- */
 $id('foodName')?.addEventListener('change', tryAutofill);
 $id('foodQty') ?.addEventListener('input',  tryAutofill);
 $id('btnAutoFill')?.addEventListener('click', tryAutofill);
+
+renderPresets();   // 常用組合列表載入
+render();          // 畫面載入（今日數據）
