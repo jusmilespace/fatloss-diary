@@ -1,42 +1,46 @@
-/* Ju Smile PWA Service Worker */
-const CACHE_NAME = 'jusmile-pwa-v6';
-const PRECACHE = [
+const CACHE_NAME = 'jusmile-pwa-v7';
+const FILES_TO_CACHE = [
   './',
   './index.html',
-  './styles.css',
   './app.js',
+  './styles.css',
   './manifest.json',
-  './privacy.html',
   './404.html',
+  './privacy.html',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './icon-maskable-192.png',
+  './icon-maskable-512.png',
+  './apple-touch-icon.png'
 ];
 
-self.addEventListener('install', (e)=>{
-  e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(PRECACHE)));
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
+  );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (e)=>{
-  e.waitUntil(
-    caches.keys().then(keys=>Promise.all(
-      keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k))
-    ))
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((key) => key !== CACHE_NAME && caches.delete(key)))
+    )
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (e)=>{
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  e.respondWith(
-    caches.match(req).then(cached=>{
-      const fetchPromise = fetch(req).then(res=>{
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(c=>c.put(req, copy));
-        return res;
-      }).catch(()=>cached);
-      return cached || fetchPromise;
-    })
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    caches.match(event.request).then((response) =>
+      response ||
+      fetch(event.request).then((res) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request.url, res.clone());
+          return res;
+        });
+      }).catch(() => caches.match('./index.html'))
+    )
   );
 });
