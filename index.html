@@ -1,187 +1,274 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Ju Smile 減脂日誌</title>
   <meta name="theme-color" content="#97d0ba">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="icon-192.png" sizes="192x192">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* 補一些小樣式（其餘用你的 styles.css） */
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:#fff;border:1px solid var(--border,#e9ecef);border-radius:14px;padding:16px;margin:14px 0}
+    .row3,.row4{display:grid;gap:12px}
+    .row3{grid-template-columns:1fr 1fr 1fr}
+    .row4{grid-template-columns:1fr 1fr 1fr 1fr}
+    label{display:block;margin:2px 0 6px;font-weight:600;color:#334}
+    input,select,button{width:100%;padding:10px;border:1px solid #dfe3e6;border-radius:10px;background:#fff}
+    button{cursor:pointer}
+    .muted{color:#666;font-size:12px}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{padding:8px;border-bottom:1px solid #eef2f4;text-align:left}
+    .progress{height:28px;background:#eef6f3;border-radius:12px;overflow:hidden}
+    .bar{height:100%;background:var(--mint,#97d0ba);color:#fff;display:flex;align-items:center;justify-content:center}
+    .typeahead{position:relative}
+    .typeahead-panel{position:absolute;inset:auto 0 0 0;transform:translateY(100%);background:#fff;border:1px solid #e7ecef;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.06);max-height:240px;overflow:auto;z-index:30}
+    .typeahead-item{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;cursor:pointer}
+    .typeahead-item.active,.typeahead-item:hover{background:#f3faf7}
+    .typeahead-mark{background:#fffdc7}
+    .tag{font-size:12px;color:#0d4a3c;opacity:.7}
+    dialog.card { border:0; border-radius:14px; padding:18px 20px; }
+    dialog::backdrop { background: rgba(0,0,0,.25); }
+    .btn-primary{background:#97d0ba;color:#fff;border:1px solid rgba(0,0,0,.05)}
+    .btn-danger{background:#fdeaea;color:#a33a3a;border:1px solid #f4cfcf}
+    .btn-ghost{background:#eef6f3;color:#0d4a3c;border:1px solid #cfe8df}
+  </style>
 </head>
 <body>
-<header class="topbar">
-  <h1>Ju Smile 減脂日誌 <small id="appVer" class="muted"></small></h1>
-  <button id="btnInstall" class="btn-primary" style="display:none">安裝 App</button>
-</header>
+<div class="wrap">
 
-<main class="container">
-
-  <!-- 今日概況 -->
-  <section class="card">
-    <h2>📊 今日概況</h2>
-    <div class="stats">
-      <div class="pill">攝取：<b id="sumKcal">0</b> kcal</div>
-      <div class="pill">蛋白：<b id="sumProtein">0</b> g</div>
-      <div class="pill">碳水：<b id="sumCarb">0</b> g</div>
-      <div class="pill">脂肪：<b id="sumFat">0</b> g</div>
-      <div class="pill pill-alt">運動消耗：<b id="exKcal">0</b> kcal</div>
-      <div class="pill pill-strong">淨熱量：<b id="netKcal">0</b> kcal</div>
+  <header class="card">
+    <h1>Ju Smile 減脂日誌 <small id="appVer" class="muted"></small></h1>
+    <div class="row4">
+      <div>
+        <label>每日熱量目標</label>
+        <input id="setCal" type="number" placeholder="例：1300">
+      </div>
+      <div>
+        <label>每日蛋白質目標 (g)</label>
+        <input id="setProtein" type="number" placeholder="例：160">
+      </div>
+      <div>
+        <label>目前體重 (kg)</label>
+        <input id="setWeight" type="number" step="0.1" placeholder="例：70">
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="btnSaveTargets" class="btn-primary">儲存目標/體重</button>
+      </div>
     </div>
-    <div class="progress"><div id="calBar" class="bar"></div></div>
-  </section>
+  </header>
 
-  <!-- 飲食紀錄 -->
   <section class="card">
-    <h2>🍽️ 飲食紀錄（三種輸入模式）</h2>
+    <h2>飲食紀錄（三種輸入任選）</h2>
 
-    <!-- 名稱 / 數量 / 單位（單位換算） -->
-<div class="row3">
-  <div>
-    <label>食物名稱（支援搜尋/別名）</label>
-    <div class="typeahead">
-      <input id="foodName" class="typeahead-input" placeholder="搜尋：白飯 / 雞腿便當 / 豆漿…">
-      <div id="foodSuggest" class="typeahead-panel" hidden></div>
+    <!-- 餐別 -->
+    <div class="row3">
+      <div>
+        <label>餐別</label>
+        <select id="foodMeal">
+          <option>早餐</option>
+          <option>午餐</option>
+          <option>晚餐</option>
+          <option>點心</option>
+          <option>宵夜</option>
+        </select>
+      </div>
+      <div></div><div></div>
     </div>
-    <small class="pill">輸入關鍵字會出現建議；↑↓移動、Enter選取</small>
-  </div>
-  <div>
-    <label>數量</label>
-    <input id="foodQty" type="number" inputmode="decimal" step="0.1" value="1">
-    <small class="muted">可 0.5 / 1 / 2…（倍率）</small>
-  </div>
-  <div>
-    <label>單位</label>
-    <select id="foodUnit">
-      <option value="">選擇單位</option>
-      <option value="g">g（公克）</option>
-      <option value="ml">ml（毫升）</option>
-      <option value="個">個</option>
-      <option value="碗">碗</option>
-      <option value="片">片</option>
-      <option value="湯匙">湯匙</option>
-      <option value="張">張</option>
-      <option value="粒">粒</option>
-      <option value="杯">杯</option>
-    </select>
-    <small id="unitHint" class="muted">輸入名稱時若匹配資料庫，會自動帶出可用單位並換算份量</small>
-  </div>
-</div>
 
-<!-- Type × 份量：把 label 改名 -->
-<div class="row3">
-  <div>
-    <label>類別 Type</label>
-    <select id="foodType">
-      <option value="">（可不選）</option>
-      <option>全穀雜糧類</option>
-      <option>豆魚蛋肉類（低脂）</option>
-      <option>豆魚蛋肉類（中脂）</option>
-      <option>豆魚蛋肉類（高脂）</option>
-      <option>乳品類（全脂）</option>
-      <option>乳品類（低脂）</option>
-      <option>乳品類（脫脂）</option>
-      <option>蔬菜類</option>
-      <option>水果類</option>
-      <option>油脂與堅果種子類</option>
-      <option>甜點飲料（糖）</option>
-      <option>手搖飲（奶茶基準）</option>
-      <option>混合料理（便當小格）</option>
-    </select>
-  </div>
-  <div>
-    <label>計算份量</label>
-    <input id="foodServings" type="number" step="0.1" placeholder="例：1.5">
-  </div>
-  <div>
-    <label>&nbsp;</label>
-    <button id="btnAutoFill" class="btn-ghost" style="width:100%">自動帶入</button>
-  </div>
-</div>
+    <!-- 名稱 / 數量 / 單位 -->
+    <div class="row3">
+      <div>
+        <label>食物名稱（支援搜尋/別名）</label>
+        <div class="typeahead">
+          <input id="foodName" class="typeahead-input" placeholder="搜尋：白飯 / 雞腿便當 / 豆漿…">
+          <div id="foodSuggest" class="typeahead-panel" hidden></div>
+        </div>
+        <small class="muted">輸入關鍵字會出現建議；↑↓移動、Enter選取</small>
+      </div>
+      <div>
+        <label>數量</label>
+        <input id="foodQty" type="number" inputmode="decimal" step="0.1" value="1">
+        <small class="muted">可 0.5 / 1 / 2…（倍率）</small>
+      </div>
+      <div>
+        <label>單位</label>
+        <select id="foodUnit">
+          <option value="">選擇單位</option>
+          <option value="g">g（公克）</option>
+          <option value="ml">ml（毫升）</option>
+          <option value="個">個</option>
+          <option value="碗">碗</option>
+          <option value="片">片</option>
+          <option value="湯匙">湯匙</option>
+          <option value="張">張</option>
+          <option value="粒">粒</option>
+          <option value="杯">杯</option>
+        </select>
+        <small id="unitHint" class="muted">輸入名稱時若匹配資料庫，會自動帶出可用單位並換算份量</small>
+      </div>
+    </div>
 
+    <!-- Type × 計算份量 -->
+    <div class="row3">
+      <div>
+        <label>類別 Type</label>
+        <select id="foodType">
+          <option value="">（可不選）</option>
+          <option>全穀雜糧類</option>
+          <option>豆魚蛋肉類（低脂）</option>
+          <option>豆魚蛋肉類（中脂）</option>
+          <option>豆魚蛋肉類（高脂）</option>
+          <option>乳品類（全脂）</option>
+          <option>乳品類（低脂）</option>
+          <option>乳品類（脫脂）</option>
+          <option>蔬菜類</option>
+          <option>水果類</option>
+          <option>油脂與堅果種子類</option>
+          <option>甜點飲料（糖）</option>
+          <option>手搖飲（奶茶基準）</option>
+          <option>混合料理（便當小格）</option>
+        </select>
+      </div>
+      <div>
+        <label>計算份量</label>
+        <input id="foodServings" type="number" step="0.1" placeholder="例：1.5">
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="btnAutoFill" class="btn-ghost" style="width:100%">自動帶入</button>
+      </div>
+    </div>
 
-    <!-- 萃取結果 -->
+    <!-- K / P C F -->
     <div class="row4">
       <div><label>kcal</label><input id="foodKcal" type="number"></div>
-      <div><label>P（g）</label><input id="foodProtein" type="number" step="0.1"></div>
-      <div><label>C（g）</label><input id="foodCarb" type="number" step="0.1"></div>
-      <div><label>F（g）</label><input id="foodFat" type="number" step="0.1"></div>
+      <div><label>蛋白質 (g)</label><input id="foodProtein" type="number"></div>
+      <div><label>碳水 (g)</label><input id="foodCarb" type="number"></div>
+      <div><label>脂肪 (g)</label><input id="foodFat" type="number"></div>
     </div>
 
-    <div class="row">
-      <button id="btnAddFood" class="btn-primary">加入紀錄</button>
+    <div class="row3" style="margin-top:10px">
+      <button id="btnAddFood" class="btn-primary">加入今日紀錄</button>
       <button id="btnClearFoods" class="btn-danger">清空今天飲食</button>
+      <div></div>
     </div>
 
-    <table class="table">
-      <thead><tr><th>餐別</th><th>名稱</th><th>kcal</th><th>P</th><th>C</th><th>F</th><th></th></tr></thead>
+    <table class="table" style="margin-top:10px">
+      <thead>
+        <tr>
+          <th>餐別</th><th>名稱</th><th>數量</th><th>單位</th>
+          <th>kcal</th><th>蛋白質</th><th>碳水</th><th>脂肪</th><th></th>
+        </tr>
+      </thead>
       <tbody id="foodTable"></tbody>
     </table>
   </section>
 
-  <!-- 運動 -->
   <section class="card">
-    <h2>🏃‍♀️ 運動紀錄</h2>
-    <div class="row3">
-      <div><label>運動名稱</label><input id="exName" list="exList"><datalist id="exList"></datalist></div>
-      <div><label>MET</label><input id="exMET" type="number" step="0.1"></div>
-      <div><label>分鐘</label><input id="exMins" type="number" value="30"></div>
+    <h2>運動紀錄</h2>
+    <div class="row4">
+      <div>
+        <label>運動名稱</label>
+        <input id="exName" list="exList" placeholder="例：快走 / 重訓 / 游泳…">
+        <datalist id="exList"></datalist>
+      </div>
+      <div>
+        <label>MET（代謝當量）
+          <span title="1 MET ≈ 靜坐時消耗；運動熱量 ≈ MET × 3.5 × 體重(kg) ÷ 200 × 分鐘。若不在清單，請自行輸入 MET。">ⓘ</span>
+        </label>
+        <input id="exMET" type="number" step="0.1" placeholder="例：快走 3.5、慢跑 7">
+        <small class="muted">名稱不在清單也可直接輸入 MET 後加入。</small>
+      </div>
+      <div>
+        <label>分鐘</label>
+        <input id="exMins" type="number" value="30">
+      </div>
+      <div>
+        <label>體重 (kg)</label>
+        <input id="userWeight" type="number" step="0.1" placeholder="預設用上方體重">
+      </div>
     </div>
-    <div class="row3">
-      <div><label>體重（kg）</label><input id="userWeight" type="number" step="0.1"></div>
-      <div><button id="btnAddEx" class="btn-primary">加入運動</button></div>
-      <div><button id="btnClearExToday" class="btn-danger">清空運動</button></div>
+    <div class="row3" style="margin-top:10px">
+      <button id="btnAddEx" class="btn-primary">加入運動</button>
+      <button id="btnClearExToday" class="btn-danger">清空今天運動</button>
+      <div></div>
     </div>
-    <table class="table"><thead><tr><th>名稱</th><th>MET</th><th>分鐘</th><th>kcal</th><th></th></tr></thead><tbody id="exTable"></tbody></table>
+
+    <table class="table" style="margin-top:10px">
+      <thead><tr><th>名稱</th><th>MET</th><th>分鐘</th><th>kcal</th><th></th></tr></thead>
+      <tbody id="exTable"></tbody>
+    </table>
   </section>
 
-  <!-- 設定 / 同步 -->
   <section class="card">
-  <h2>🧺 常用食物組合（快速加入）</h2>
-  <div class="row3">
-    <div><label>名稱</label><input id="presetName" placeholder="例：雞腿便當"></div>
-    <div><label>&nbsp;</label><button id="btnSavePreset" class="btn-primary">把「今天的飲食明細」存成組合</button></div>
-    <div><label>&nbsp;</label><button id="btnClearPresets" class="btn-danger">清空全部組合</button></div>
-  </div>
-  <table class="table"><thead><tr><th>名稱</th><th>品項數</th><th></th></tr></thead><tbody id="presetTable"></tbody></table>
-</section>
+    <h2>今日統計</h2>
+    <div class="row4">
+      <div><label>攝入 kcal</label><div id="sumKcal">0</div></div>
+      <div><label>運動消耗 kcal</label><div id="exKcal">0</div></div>
+      <div><label>淨熱量 kcal</label><div id="netKcal">0</div></div>
+      <div></div>
+    </div>
+    <div class="progress" style="margin-top:10px"><div class="bar" id="calBar" style="width:0%">0/0 kcal</div></div>
+  </section>
 
   <section class="card">
-    <h2>⚙️ 設定與同步</h2>
+    <h2>🧺 常用食物組合（快速加入）</h2>
     <div class="row3">
-      <div><label>每日熱量上限（kcal）</label><input id="setCal" type="number" placeholder="例如 1300"></div>
-      <div><label>每日蛋白目標（g）</label><input id="setProtein" type="number" placeholder="例如 120"></div>
-      <div><label>預設體重（kg）</label><input id="setWeight" type="number" step="0.1" placeholder="例：70"></div>
+      <div><label>名稱</label><input id="presetName" placeholder="例：雞腿便當"></div>
+      <div><label>&nbsp;</label><button id="btnSavePreset" class="btn-primary">把「今天的飲食明細」存成組合</button></div>
+      <div><label>&nbsp;</label><button id="btnClearPresets" class="btn-danger">清空全部組合</button></div>
     </div>
-    <div class="row">
-      <button id="btnSaveTargets" class="btn-primary">保存目標/體重</button>
-    </div>
+    <table class="table" style="margin-top:10px">
+      <thead><tr><th>名稱</th><th>品項數</th><th></th></tr></thead>
+      <tbody id="presetTable"></tbody>
+    </table>
+  </section>
 
-    <h3>📥 同步 CSV（可用你或使用者自己的 Google Sheet → 發布 CSV）</h3>
+  <!-- 組合編輯 dialog -->
+  <dialog id="presetEditor" class="card" style="max-width:720px;width:90%">
+    <h3 id="peTitle">編輯組合</h3>
+    <table class="table">
+      <thead><tr><th>#</th><th>名稱</th><th>kcal</th><th>蛋白質</th><th>碳水</th><th>脂肪</th><th></th></tr></thead>
+      <tbody id="peBody"></tbody>
+    </table>
     <div class="row3">
-      <div><label>TYPE_TABLE CSV URL</label><input id="typeCsvUrl" placeholder="https://.../pub?output=csv"></div>
-      <div><label>UNIT_MAP CSV URL</label><input id="unitCsvUrl" placeholder="https://.../pub?output=csv"></div>
-      <div><label>FOOD_DB CSV URL</label><input id="foodCsvUrl" placeholder="https://.../pub?output=csv"></div>
+      <button id="peClose" class="btn-ghost">關閉</button>
+      <button id="peSave" class="btn-primary">儲存變更</button>
+      <button id="peDelete" class="btn-danger">刪除整個組合</button>
     </div>
-    <div class="row">
-      <button id="btnSyncTypeCsv" class="btn-ghost">同步 Type</button>
-      <button id="btnSyncUnitCsv" class="btn-ghost">同步 Unit</button>
-      <button id="btnSyncFoodCsv" class="btn-ghost">同步 Food</button>
+  </dialog>
+
+  <section class="card">
+    <h2>設定與同步（可貼 CSV 連結）</h2>
+    <div class="row3">
+      <div>
+        <label>類別表 TYPE_TABLE CSV</label>
+        <input id="typeCsvUrl" placeholder="https://.../TYPE_TABLE.csv">
+        <button id="btnSyncTypeCsv" class="btn-ghost">同步（類別表）</button>
+      </div>
+      <div>
+        <label>單位換算 UNIT_MAP CSV</label>
+        <input id="unitCsvUrl" placeholder="https://.../UNIT_MAP.csv">
+        <button id="btnSyncUnitCsv" class="btn-ghost">同步（單位換算）</button>
+      </div>
+      <div>
+        <label>精準食物 FOOD_DB CSV</label>
+        <input id="foodCsvUrl" placeholder="https://.../FOOD_DB.csv">
+        <button id="btnSyncFoodCsv" class="btn-ghost">同步（精準）</button>
+      </div>
     </div>
   </section>
 
-</main>
+  <footer class="card">
+    <small class="muted">© Ju Smile 減脂日誌</small>
+  </footer>
 
-<footer class="footer">
-  <small>© Ju Smile | 本地儲存 | 非醫療建議</small>
-</footer>
-
-<script src="./app.js"></script>
-<script>
-if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('btnInstall').style.display='inline-block';});
-document.getElementById('btnInstall').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('btnInstall').style.display='none';});
-</script>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
