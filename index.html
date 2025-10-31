@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Ju Smile 減脂日誌</title>
   <meta name="theme-color" content="#97d0ba" />
-  <link rel="manifest" href="manifest.json" />
+  <link rel="manifest" href="manifest.json?v=20251101-3" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="icon" href="icon-192.png" sizes="192x192" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20251101-3" />
   <style>
     :root{--mint:#97d0ba;--border:#e9ecef}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;line-height:1.45;background:#f7faf9;color:#213}
@@ -39,6 +39,18 @@
     details summary{cursor:pointer;color:#0d4a3c}
     details{background:#f6fbf9;border:1px dashed #cfe8df;border-radius:10px;padding:8px 10px}
     .note{font-size:12px;color:#456}
+
+    /* --- RWD 斷點：避免欄位擠在一起 --- */
+    @media (max-width: 1100px){
+      .row4 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 820px){
+      .row3 { grid-template-columns: 1fr 1fr; }
+      .row4 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px){
+      .row3, .row4 { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -183,11 +195,10 @@
       <div>
         <label>從常用組合快速加入</label>
         <div style="display:flex;gap:8px">
-  <select id="quickPresetSelect" style="flex:1"></select>
-  <button id="btnQuickAddPreset" class="btn-ghost">加入</button>
-  <button id="btnEditSelectedPreset" class="btn-ghost" title="編輯下拉選中的常用組合">管理/編輯</button>
-</div>
-
+          <select id="quickPresetSelect" style="flex:1"></select>
+          <button id="btnQuickAddPreset" class="btn-ghost">加入</button>
+          <button id="btnEditSelectedPreset" class="btn-ghost" title="編輯下拉選中的常用組合">管理/編輯</button>
+        </div>
       </div>
     </div>
   </section>
@@ -296,6 +307,34 @@
   </footer>
 </div>
 
-<script src="app.js"></script>
+<!-- 版本參數確保載到最新 app.js -->
+<script src="app.js?v=20251101-3"></script>
+
+<!-- Service Worker 註冊（帶版本參數＋自動切換新 SW） -->
+<script>
+  if ('serviceWorker' in navigator) {
+    const swUrl = './service-worker.js?v=20251101-3';
+
+    navigator.serviceWorker.register(swUrl).then(reg => {
+      // 若新 SW 已在 waiting，請它立刻接手
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+      // 偵測有更新
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw && nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+    });
+
+    // 接手後自動重新整理一次
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }
+</script>
 </body>
 </html>
