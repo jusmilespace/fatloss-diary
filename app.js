@@ -1,5 +1,5 @@
-/* ===== Ju Smile 渪脂日誌 app.js — 覆蓋版 ===== */
-const APP_VERSION = 'v1.5';
+/* ===== Ju Smile 減脂日誌 app.js — v2.0 ===== */
+const APP_VERSION = 'v2.0';
 const $id = (x)=>document.getElementById(x);
 const today = ()=> new Date().toISOString().slice(0,10);
 if ($id('appVer')) $id('appVer').textContent = APP_VERSION;
@@ -110,7 +110,7 @@ function parseFoodCSV(text){
     };
   });
 }
-async function fetchText(url){ const r=await fetch(url,{cache:'no-store'}); return await r.text(); }
+async function fetchNoCache(url){ const r=await fetch(url,{cache:'no-store'}); return await r.text(); }
 
 /* ---------- Autocomplete ---------- */
 function getAllFoodCandidates() {
@@ -189,7 +189,7 @@ document.addEventListener('click', (e)=>{
 function rebuildUnitOptionsFor(name){
   const sel = $id('foodUnit'); const hint = $id('unitHint');
   if(!sel) return; sel.innerHTML = '<option value="">選擇單位</option>';
-  if(hint) hint.textContent = '輸入名稱時若匹配資料庫，會自動帶出可用單位並換算份量';
+  if(hint) hint.textContent = '輸入名稱若匹配資料庫，會自動帶出可用單位並換算份量';
   if(!name) return;
 
   const key = normalize(name);
@@ -223,12 +223,12 @@ function calcByTypeServings(typeName, servings){
   return {kcal:Math.round(base.kcal*s), protein:+(base.protein*s).toFixed(1), carb:+(base.carb*s).toFixed(1), fat:+(base.fat*s).toFixed(1)};
 }
 
-/* ---------- 自動帶入（單位→精準→Type×份量） ---------- */
+/* ---------- 重新計算（單位→精準→Type×份量） ---------- */
 function tryAutofill(){
   const name = $id('foodName').value.trim();
   const qty  = parseFloat($id('foodQty').value)||1;
 
-  // A) 單位換算（修正版：qty / unit_qty × servings）
+  // A) 單位換算（正確公式：qty / unit_qty × servings）
   const unitSel = $id('foodUnit');
   const selIdx = unitSel && unitSel.value ? parseInt(unitSel.value, 10) : NaN;
   if (!isNaN(selIdx) && UNIT_MAP[selIdx]){
@@ -363,21 +363,8 @@ const PRESET_KEY = 'jusmile-presets';
 function readPresets(){ try{return JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');}catch{return [];} }
 function writePresets(arr){ localStorage.setItem(PRESET_KEY, JSON.stringify(arr||[])); }
 
-function renderPresets(){
-  const tb = $id('presetTable'); if(!tb) return;
-  const presets = readPresets();
-  tb.innerHTML = '';
-  presets.forEach((p,idx)=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${p.name}</td><td>${p.items.length}</td>
-      <td>
-        <button class="btn-ghost" onclick="applyPreset(${idx})">加入今天</button>
-        <button class="btn-ghost" onclick="editPreset(${idx})">編輯</button>
-        <button class="btn-danger" onclick="delPreset(${idx})">刪除</button>
-      </td>`;
-    tb.appendChild(tr);
-  });
-}
+function renderPresets(){ /* UI 列表移除，改由快速下拉呈現 */ rebuildQuickPresetSelect(); }
+
 window.applyPreset = (i)=>{
   const presets = readPresets(); const p = presets[i]; if(!p) return;
   const d=today(); const day=getDay(d);
@@ -386,26 +373,8 @@ window.applyPreset = (i)=>{
   alert(`已加入「${p.name}」到今天`);
 };
 window.delPreset = (i)=>{
-  const arr=readPresets(); arr.splice(i,1); writePresets(arr); renderPresets();
+  const arr=readPresets(); arr.splice(i,1); writePresets(arr); rebuildQuickPresetSelect();
 };
-$id('btnSavePreset')?.addEventListener('click', ()=>{
-  const name = ($id('presetName')?.value||'').trim();
-  if(!name){ alert('請輸入組合名稱'); return; }
-  const d=today(); const day=getDay(d);
-  if(!day.foods || !day.foods.length){ alert('今天沒有飲食明細可保存'); return; }
-  const items = day.foods.map(({meal,name,qty,unit,kcal,protein,carb,fat,type,servings})=>({meal,name,qty,unit,kcal,protein,carb,fat,type,servings}));
-  const arr = readPresets();
-  const idx = arr.findIndex(p=>p.name===name);
-  if(idx>-1) arr[idx] = {name, items, updated:Date.now()};
-  else arr.push({name, items, updated:Date.now()});
-  writePresets(arr);
-  if ($id('presetName')) $id('presetName').value='';
-  renderPresets();
-  alert('已保存為常用組合');
-});
-$id('btnClearPresets')?.addEventListener('click', ()=>{
-  if(confirm('確定清空所有常用組合？')){ writePresets([]); renderPresets(); }
-});
 
 /* ---- 組合編輯 dialog ---- */
 let _peIndex = -1;
@@ -438,30 +407,127 @@ window.removePresetItem = (j)=>{
   p.items.splice(j,1); writePresets(arr); renderPresetEditorBody();
 };
 $id('peClose')?.addEventListener('click', ()=> $id('presetEditor').close());
-$id('peSave')?.addEventListener('click', ()=>{ renderPresets(); $id('presetEditor').close(); });
+$id('peSave')?.addEventListener('click', ()=>{ rebuildQuickPresetSelect(); $id('presetEditor').close(); });
 $id('peDelete')?.addEventListener('click', ()=>{
   if(!confirm('確定刪除此組合？')) return;
   const arr = readPresets(); arr.splice(_peIndex,1); writePresets(arr);
-  renderPresets(); $id('presetEditor').close();
+  rebuildQuickPresetSelect(); $id('presetEditor').close();
+});
+
+/* ---- 明細勾選 → 存成組合 / 快速加入 ---- */
+let SELECTED_FOOD_INDEXES = new Set();
+
+function renderFoods(day){
+  const tb = $id('foodTable'); if(!tb) return; tb.innerHTML='';
+  SELECTED_FOOD_INDEXES = new Set(); // 每次重繪清空勾選
+
+  (day.foods||[]).forEach((x,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" class="rowChk" data-idx="${i}"></td>
+      <td>${x.meal||''}</td>
+      <td>${x.name||''}</td>
+      <td>${(x.qty??'') || ''}</td>
+      <td>${x.unit||''}</td>
+      <td>${x.kcal||0}</td>
+      <td>${x.protein||0}</td>
+      <td>${x.carb||0}</td>
+      <td>${x.fat||0}</td>
+      <td><button class="btn-danger" onclick="delFood(${i})">刪</button></td>
+    `;
+    tb.appendChild(tr);
+  });
+
+  // 勾選事件
+  tb.querySelectorAll('.rowChk').forEach(chk=>{
+    chk.addEventListener('change', (e)=>{
+      const idx = parseInt(e.target.dataset.idx,10);
+      if (e.target.checked) SELECTED_FOOD_INDEXES.add(idx);
+      else SELECTED_FOOD_INDEXES.delete(idx);
+    });
+  });
+
+  // 全選/全不選
+  const all = $id('chkAllFoods');
+  if (all){
+    all.checked = false;
+    all.onchange = ()=>{
+      const rows = tb.querySelectorAll('.rowChk');
+      rows.forEach(chk=>{
+        chk.checked = all.checked;
+        const idx = parseInt(chk.dataset.idx,10);
+        if (all.checked) SELECTED_FOOD_INDEXES.add(idx);
+        else SELECTED_FOOD_INDEXES.delete(idx);
+      });
+    };
+  }
+}
+function getSelectedFoodItems(){
+  const d = today(); const day = getDay(d);
+  const out = [];
+  (day.foods||[]).forEach((it,idx)=>{
+    if (SELECTED_FOOD_INDEXES.has(idx)) {
+      const {meal,name,qty,unit,kcal,protein,carb,fat,type,servings} = it;
+      out.push({meal,name,qty,unit,kcal,protein,carb,fat,type,servings});
+    }
+  });
+  return out;
+}
+$id('btnSavePresetFromSelected')?.addEventListener('click', ()=>{
+  const name = ($id('presetFromSelectedName')?.value||'').trim();
+  if (!name){ alert('請輸入組合名稱'); return; }
+  const items = getSelectedFoodItems();
+  if (!items.length){ alert('請先在食物明細勾選要存的品項'); return; }
+
+  const arr = readPresets();
+  const idx = arr.findIndex(p=>p.name===name);
+  if (idx>-1) arr[idx] = {name, items, updated:Date.now()};
+  else arr.push({name, items, updated:Date.now()});
+  writePresets(arr);
+
+  // 清空 UI
+  $id('presetFromSelectedName').value = '';
+  if ($id('chkAllFoods')) $id('chkAllFoods').checked = false;
+  SELECTED_FOOD_INDEXES.clear();
+
+  rebuildQuickPresetSelect();
+  alert('已用勾選的品項保存為常用組合');
+});
+function rebuildQuickPresetSelect(){
+  const sel = $id('quickPresetSelect'); if(!sel) return;
+  const arr = readPresets();
+  sel.innerHTML = '';
+  if (!arr.length){ sel.innerHTML = '<option value="">（尚無組合）</option>'; return; }
+  arr.forEach((p,i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${p.name}（${p.items.length}）`;
+    sel.appendChild(opt);
+  });
+}
+$id('btnQuickAddPreset')?.addEventListener('click', ()=>{
+  const sel = $id('quickPresetSelect'); if(!sel) return;
+  const idx = parseInt(sel.value,10);
+  if (isNaN(idx)){ alert('請先選擇一個常用組合'); return; }
+  applyPreset(idx);
 });
 
 /* ---------- CSV 同步按鈕 ---------- */
-async function fetchText(url){ const r=await fetch(url,{cache:'no-store'}); return await r.text(); }
 $id('btnSyncTypeCsv')?.addEventListener('click', async ()=>{
   const url=$id('typeCsvUrl').value.trim(); if(!url){ alert('請貼上 CSV 連結'); return; }
-  try{ const txt=await fetchText(url); const tbl=parseTypeCSV(txt);
+  try{ const txt=await fetchNoCache(url); const tbl=parseTypeCSV(txt);
     TYPE_TABLE=tbl; localStorage.setItem(TYPE_TABLE_KEY, JSON.stringify(tbl)); localStorage.setItem(TYPE_URL_KEY,url);
     alert('同步完成（類別表）'); }catch(e){ alert('同步失敗：'+e.message); }
 });
 $id('btnSyncUnitCsv')?.addEventListener('click', async ()=>{
   const url=$id('unitCsvUrl').value.trim(); if(!url){ alert('請貼上 CSV 連結'); return; }
-  try{ const txt=await fetchText(url); const rows=parseUnitCSV(txt);
+  try{ const txt=await fetchNoCache(url); const rows=parseUnitCSV(txt);
     UNIT_MAP=rows; localStorage.setItem(UNIT_MAP_KEY, JSON.stringify(rows)); localStorage.setItem(UNIT_URL_KEY,url);
     alert('同步完成（單位換算）'); rebuildUnitOptionsFor($id('foodName')?.value||''); }catch(e){ alert('同步失敗：'+e.message); }
 });
 $id('btnSyncFoodCsv')?.addEventListener('click', async ()=>{
   const url=$id('foodCsvUrl').value.trim(); if(!url){ alert('請貼上 CSV 連結'); return; }
-  try{ const txt=await fetchText(url); const rows=parseFoodCSV(txt);
+  try{ const txt=await fetchNoCache(url); const rows=parseFoodCSV(txt);
     FOOD_DB=rows; localStorage.setItem(FOOD_DB_KEY, JSON.stringify(rows)); localStorage.setItem(FOOD_URL_KEY,url);
     alert('同步完成（精準食物庫）'); }catch(e){ alert('同步失敗：'+e.message); }
 });
@@ -476,23 +542,6 @@ $id('btnSyncFoodCsv')?.addEventListener('click', async ()=>{
 function sumFoods(day){ let kcal=0,p=0,c=0,f=0; (day.foods||[]).forEach(x=>{kcal+=+x.kcal||0; p+=+x.protein||0; c+=+x.carb||0; f+=+x.fat||0;}); return {kcal,p,c,f}; }
 function sumExercises(day){ let kcal=0; (day.exercises||[]).forEach(e=>kcal+=+e.kcal||0); return {kcal}; }
 
-function renderFoods(day){
-  const tb=$id('foodTable'); if(!tb) return; tb.innerHTML='';
-  (day.foods||[]).forEach((x,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `
-      <td>${x.meal||''}</td>
-      <td>${x.name||''}</td>
-      <td>${(x.qty??'') || ''}</td>
-      <td>${x.unit||''}</td>
-      <td>${x.kcal||0}</td>
-      <td>${x.protein||0}</td>
-      <td>${x.carb||0}</td>
-      <td>${x.fat||0}</td>
-      <td><button class="btn-danger" onclick="delFood(${i})">刪</button></td>`;
-    tb.appendChild(tr);
-  });
-}
 function renderExercises(day){
   const tb=$id('exTable'); if(!tb) return; tb.innerHTML='';
   (day.exercises||[]).forEach((e,i)=>{
@@ -533,5 +582,5 @@ $id('foodName')?.addEventListener('change', tryAutofill);
 $id('foodQty') ?.addEventListener('input',  tryAutofill);
 $id('btnAutoFill')?.addEventListener('click', tryAutofill);
 
-renderPresets();
+rebuildQuickPresetSelect();
 render();
