@@ -198,8 +198,23 @@ function rebuildUnitOptionsFor(name){
     const hitByAlias = Array.isArray(r.alias) && r.alias.some(a=> normalize(a).includes(key) || normalize(a)===key);
     return (hitByName || hitByAlias) && ALLOWED_UNITS.includes(r.unit);
   });
-  if(!rows.length) return;
 
+  // 沒命中：列出通用單位 + 提示
+  if(!rows.length){
+    const all = ['g','ml','個','碗','片','湯匙','張','粒','杯'];
+    all.forEach(u=>{
+      const opt = document.createElement('option');
+      opt.value = u;
+      opt.textContent = u;
+      sel.appendChild(opt);
+    });
+    if(hint){
+      hint.textContent = '未找到對應資料：請自行選單位，並在「計算份量」「類別 Type」輸入估算值後按「重新計算」。';
+    }
+    return;
+  }
+
+  // 命中：列出對應單位（不重複）
   const seen = new Set();
   rows.forEach(r=>{
     if (seen.has(r.unit)) return;
@@ -228,7 +243,7 @@ function tryAutofill(){
   const name = $id('foodName').value.trim();
   const qty  = parseFloat($id('foodQty').value)||1;
 
-  // A) 單位換算（正確公式：qty / unit_qty × servings）
+  // A) 單位換算（qty / unit_qty × servings）
   const unitSel = $id('foodUnit');
   const selIdx = unitSel && unitSel.value ? parseInt(unitSel.value, 10) : NaN;
   if (!isNaN(selIdx) && UNIT_MAP[selIdx]){
@@ -363,7 +378,35 @@ const PRESET_KEY = 'jusmile-presets';
 function readPresets(){ try{return JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');}catch{return [];} }
 function writePresets(arr){ localStorage.setItem(PRESET_KEY, JSON.stringify(arr||[])); }
 
-function renderPresets(){ /* UI 列表移除，改由快速下拉呈現 */ rebuildQuickPresetSelect(); }
+/* 顯示「名稱：內容預覽」 */
+function rebuildQuickPresetSelect(){
+  const sel = $id('quickPresetSelect'); 
+  if(!sel) return;
+  const arr = readPresets();
+  sel.innerHTML = '';
+  if (!arr.length){
+    sel.innerHTML = '<option value="">（尚無常用組合）</option>';
+    return;
+  }
+  arr.forEach((p,i)=>{
+    const preview = (p.items||[]).map(x=>x.name).slice(0,3).join('＋') + ((p.items||[]).length>3 ? '…' : '');
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${p.name}：${preview}`;
+    sel.appendChild(opt);
+  });
+}
+
+/* 儲存後自動刷新並選中 */
+function selectPresetByName(name){
+  const sel = $id('quickPresetSelect'); if(!sel) return;
+  const arr = readPresets();
+  const idx = arr.findIndex(p => p.name === name);
+  rebuildQuickPresetSelect();
+  if (idx > -1) sel.value = String(idx);
+  else if (arr.length) sel.value = "0";
+  sel.dispatchEvent(new Event('change'));
+}
 
 window.applyPreset = (i)=>{
   const presets = readPresets(); const p = presets[i]; if(!p) return;
@@ -485,31 +528,29 @@ $id('btnSavePresetFromSelected')?.addEventListener('click', ()=>{
   else arr.push({name, items, updated:Date.now()});
   writePresets(arr);
 
-  // 清空 UI
+  // 清 UI
   $id('presetFromSelectedName').value = '';
   if ($id('chkAllFoods')) $id('chkAllFoods').checked = false;
   SELECTED_FOOD_INDEXES.clear();
 
-  rebuildQuickPresetSelect();
+  // 🔁 立即重建下拉 & 自動選中新儲存那筆
+  selectPresetByName(name);
+
   alert('已用勾選的品項保存為常用組合');
 });
-function rebuildQuickPresetSelect(){
-  const sel = $id('quickPresetSelect'); if(!sel) return;
-  const arr = readPresets();
-  sel.innerHTML = '';
-  if (!arr.length){ sel.innerHTML = '<option value="">（尚無組合）</option>'; return; }
-  arr.forEach((p,i)=>{
-    const opt = document.createElement('option');
-    opt.value = String(i);
-    opt.textContent = `${p.name}（${p.items.length}）`;
-    sel.appendChild(opt);
-  });
-}
 $id('btnQuickAddPreset')?.addEventListener('click', ()=>{
   const sel = $id('quickPresetSelect'); if(!sel) return;
   const idx = parseInt(sel.value,10);
   if (isNaN(idx)){ alert('請先選擇一個常用組合'); return; }
   applyPreset(idx);
+});
+/* 管理/編輯按鈕：開啟對話框 */
+$id('btnEditSelectedPreset')?.addEventListener('click', ()=>{
+  const sel = $id('quickPresetSelect');
+  if (!sel) return;
+  const idx = parseInt(sel.value, 10);
+  if (isNaN(idx)) { alert('請先選一個常用組合'); return; }
+  editPreset(idx);
 });
 
 /* ---------- CSV 同步按鈕 ---------- */
