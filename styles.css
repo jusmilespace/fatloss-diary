@@ -1,78 +1,41 @@
-:root{
-  --mint:#97d0ba;           /* Ju Smile 主色（綠） */
-  --deep:#0d4a3c;           /* 深綠字 */
-  --border:#e9ecef;
-  --bg:#f7faf9;
-  --muted:#666;
-
-  --btn-primary-bg:#97d0ba;
-  --btn-primary-text:#ffffff;
-
-  --btn-danger-bg:#fdeaea;  /* 淡粉底（像你截圖的清空按鈕） */
-  --btn-danger-text:#a33a3a;
-  --btn-danger-border:#f4cfcf;
-  --btn-ghost-bg:#eef6f3;
-  --btn-ghost-text:#0d4a3c;
-  --btn-ghost-border:#cfe8df;
+:root {
+  --mint: #97d0ba;
+  --mint-light: #e9f5f1;
+  --text-main: #213;
+  --gray: #888;
+  --danger: #b33;
+  --bg: #f7faf9;
 }
 
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:#111;font-family:system-ui,-apple-system,"PingFang TC","Noto Sans TC",Segoe UI,Roboto,Arial}
-h1,h2,h3{margin:0 0 8px}
-h1 small{font-size:12px;color:var(--muted);margin-left:6px}
-.container{max-width:980px;margin:16px auto;padding:0 12px}
-.topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:12px}
-.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 6px 20px rgba(0,0,0,.04)}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.row3{display:grid;gap:12px;grid-template-columns:1fr 160px 1fr;margin:8px 0}
-.row4{display:grid;gap:12px;grid-template-columns:repeat(4,1fr);margin:8px 0}
-label{display:block;font-size:13px;color:#333;margin:4px 0}
-input,select,button{width:100%;padding:10px;border-radius:10px;cursor:pointer}
-
-.btn-primary{
-  background:var(--btn-primary-bg);
-  color:var(--btn-primary-text);
-  border:1px solid rgba(0,0,0,0.05);
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
+  margin: 0;
 }
 
-.btn-danger{
-  background:var(--btn-danger-bg);
-  color:var(--btn-danger-text);
-  border:1px solid var(--btn-danger-border);
+a { color: var(--mint); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.btn-primary {
+  background: var(--mint);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
 }
-
-.btn-ghost{
-  background:var(--btn-ghost-bg);
-  color:var(--btn-ghost-text);
-  border:1px solid var(--btn-ghost-border);
+.btn-ghost {
+  background: var(--mint-light);
+  color: #0d4a3c;
+  border: 1px solid #cfe8df;
+  border-radius: 10px;
+  padding: 10px;
 }
-
-.pill{display:inline-block;background:#eef6f3;color:#0d4a3c;border:1px solid #cfe8df;border-radius:999px;padding:4px 10px;font-size:12px;margin-top:6px}
-.pill-alt{background:#f6f7fe;color:#243078;border-color:#dfe2ff}
-.pill-strong{background:#fef1a8;color:#6b4e00;border:1px solid #f7e27a}
-.muted{color:var(--muted)}
-.table{width:100%;border-collapse:collapse;margin-top:8px}
-.table th,.table td{border-bottom:1px solid var(--border);padding:10px;text-align:left;font-size:14px}
-.progress{height:14px;background:#f1f5f4;border-radius:999px;overflow:hidden;border:1px solid var(--border);margin-top:10px}
-.bar{height:100%;background:var(--mint);text-align:center;color:#0d4a3c;font-weight:700;font-size:12px;line-height:14px}
-
-/* Typeahead */
-.typeahead { position: relative; }
-.typeahead-input { width:100%; }
-.typeahead-panel {
-  position:absolute; left:0; right:0; top:calc(100% + 4px);
-  background:#fff; border:1px solid #e5e5e5; border-radius:10px;
-  box-shadow:0 8px 24px rgba(0,0,0,.08); max-height:280px; overflow:auto; z-index:20;
-}
-.typeahead-item { padding:10px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
-.typeahead-item:hover, .typeahead-item.active { background:#f5fffb; }
-.typeahead-item .tag { font-size:12px; color:#0d4a3c; background:#e9fbf4; border:1px solid #cfe8df;
-  padding:2px 6px; border-radius:999px; margin-left:8px; }
-.typeahead-empty { padding:10px 12px; color:#777; }
-.typeahead-mark { font-weight:700; background:#fff1a8; }
-
-.footer{padding:16px 12px;text-align:center;color:#888}
-@media (max-width:860px){
-  .row3{grid-template-columns:1fr 120px 1fr}
-  .row4{grid-template-columns:repeat(2,1fr)}
+.btn-danger {
+  background: #fdeaea;
+  color: #a33a3a;
+  border: 1px solid #f4cfcf;
+  border-radius: 10px;
+  padding: 10px;
 }
