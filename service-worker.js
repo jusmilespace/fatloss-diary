@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jusmile-pwa-v10';
+const CACHE_NAME = 'jusmile-pwa-v11';
 const FILES_TO_CACHE = [
   './',
   './index.html',
