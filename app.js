@@ -299,7 +299,7 @@ function tryAutofill(){
   const selIdx = unitSel && unitSel.value ? parseInt(unitSel.value, 10) : NaN;
   if (!isNaN(selIdx) && UNIT_MAP[selIdx]){
     const row = UNIT_MAP[selIdx];
-    const totalServings = (row.servings || 0) * qty; // 計算份量
+    const totalServings = (qty / (row.unit_qty || 1)) * (row.servings || 0); // ✅ 正確
     const est = calcByTypeServings(row.type, totalServings);
     if(est){
       $id('foodType').value      = row.type;
