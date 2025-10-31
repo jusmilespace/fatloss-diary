@@ -35,60 +35,70 @@
   <section class="card">
     <h2>🍽️ 飲食紀錄（三種輸入模式）</h2>
 
-    <!-- 名稱 / 數量 / 單位（單位換算模式） -->
-    <div class="row3">
-      <div>
-        <label>食物名稱（支援搜尋/別名）</label>
-        <div class="typeahead">
-          <input id="foodName" class="typeahead-input" placeholder="搜尋：白飯 / 雞胸肉 100g / 豆漿…">
-          <div id="foodSuggest" class="typeahead-panel" hidden></div>
-        </div>
-        <small class="pill">輸入關鍵字會出現建議；↑↓移動、Enter選取</small>
-      </div>
-      <div>
-        <label>數量</label>
-        <input id="foodQty" type="number" inputmode="decimal" step="0.1" value="1">
-        <small class="muted">可 0.5 / 1 / 2…（倍率）</small>
-      </div>
-      <div>
-        <label>單位（單位換算）</label>
-        <select id="foodUnit">
-          <option value="">（請先選食物，再選單位）</option>
-        </select>
-        <small id="unitHint" class="muted"></small>
-      </div>
+    <!-- 名稱 / 數量 / 單位（單位換算） -->
+<div class="row3">
+  <div>
+    <label>食物名稱（支援搜尋/別名）</label>
+    <div class="typeahead">
+      <input id="foodName" class="typeahead-input" placeholder="搜尋：白飯 / 雞腿便當 / 豆漿…">
+      <div id="foodSuggest" class="typeahead-panel" hidden></div>
     </div>
+    <small class="pill">輸入關鍵字會出現建議；↑↓移動、Enter選取</small>
+  </div>
+  <div>
+    <label>數量</label>
+    <input id="foodQty" type="number" inputmode="decimal" step="0.1" value="1">
+    <small class="muted">可 0.5 / 1 / 2…（倍率）</small>
+  </div>
+  <div>
+    <label>單位</label>
+    <select id="foodUnit">
+      <option value="">選擇單位</option>
+      <option value="g">g（公克）</option>
+      <option value="ml">ml（毫升）</option>
+      <option value="個">個</option>
+      <option value="碗">碗</option>
+      <option value="片">片</option>
+      <option value="湯匙">湯匙</option>
+      <option value="張">張</option>
+      <option value="粒">粒</option>
+      <option value="杯">杯</option>
+    </select>
+    <small id="unitHint" class="muted">輸入名稱時若匹配資料庫，會自動帶出可用單位並換算份量</small>
+  </div>
+</div>
 
-    <!-- Type × 份量 -->
-    <div class="row3">
-      <div>
-        <label>類別 Type</label>
-        <select id="foodType">
-          <option value="">（可不選）</option>
-          <option>全穀雜糧類</option>
-          <option>豆魚蛋肉類（低脂）</option>
-          <option>豆魚蛋肉類（中脂）</option>
-          <option>豆魚蛋肉類（高脂）</option>
-          <option>乳品類（全脂）</option>
-          <option>乳品類（低脂）</option>
-          <option>乳品類（脫脂）</option>
-          <option>蔬菜類</option>
-          <option>水果類</option>
-          <option>油脂與堅果種子類</option>
-          <option>甜點飲料（糖）</option>
-          <option>手搖飲（奶茶基準）</option>
-          <option>混合料理（便當小格）</option>
-        </select>
-      </div>
-      <div>
-        <label>份量（交換份）</label>
-        <input id="foodServings" type="number" step="0.1" placeholder="例：1.5">
-      </div>
-      <div>
-        <label>&nbsp;</label>
-        <button id="btnAutoFill" class="btn-ghost" style="width:100%">自動帶入</button>
-      </div>
-    </div>
+<!-- Type × 份量：把 label 改名 -->
+<div class="row3">
+  <div>
+    <label>類別 Type</label>
+    <select id="foodType">
+      <option value="">（可不選）</option>
+      <option>全穀雜糧類</option>
+      <option>豆魚蛋肉類（低脂）</option>
+      <option>豆魚蛋肉類（中脂）</option>
+      <option>豆魚蛋肉類（高脂）</option>
+      <option>乳品類（全脂）</option>
+      <option>乳品類（低脂）</option>
+      <option>乳品類（脫脂）</option>
+      <option>蔬菜類</option>
+      <option>水果類</option>
+      <option>油脂與堅果種子類</option>
+      <option>甜點飲料（糖）</option>
+      <option>手搖飲（奶茶基準）</option>
+      <option>混合料理（便當小格）</option>
+    </select>
+  </div>
+  <div>
+    <label>計算份量</label>
+    <input id="foodServings" type="number" step="0.1" placeholder="例：1.5">
+  </div>
+  <div>
+    <label>&nbsp;</label>
+    <button id="btnAutoFill" class="btn-ghost" style="width:100%">自動帶入</button>
+  </div>
+</div>
+
 
     <!-- 萃取結果 -->
     <div class="row4">
@@ -126,6 +136,16 @@
   </section>
 
   <!-- 設定 / 同步 -->
+  <section class="card">
+  <h2>🧺 常用食物組合（快速加入）</h2>
+  <div class="row3">
+    <div><label>名稱</label><input id="presetName" placeholder="例：雞腿便當"></div>
+    <div><label>&nbsp;</label><button id="btnSavePreset" class="btn-primary">把「今天的飲食明細」存成組合</button></div>
+    <div><label>&nbsp;</label><button id="btnClearPresets" class="btn-danger">清空全部組合</button></div>
+  </div>
+  <table class="table"><thead><tr><th>名稱</th><th>品項數</th><th></th></tr></thead><tbody id="presetTable"></tbody></table>
+</section>
+
   <section class="card">
     <h2>⚙️ 設定與同步</h2>
     <div class="row3">
