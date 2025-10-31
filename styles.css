@@ -1,6 +1,21 @@
 :root{
-  --mint:#97d0ba; --deep:#0d4a3c; --border:#e9ecef; --bg:#f7faf9; --muted:#666;
+  --mint:#97d0ba;           /* Ju Smile 主色（綠） */
+  --deep:#0d4a3c;           /* 深綠字 */
+  --border:#e9ecef;
+  --bg:#f7faf9;
+  --muted:#666;
+
+  --btn-primary-bg:#97d0ba;
+  --btn-primary-text:#ffffff;
+
+  --btn-danger-bg:#fdeaea;  /* 淡粉底（像你截圖的清空按鈕） */
+  --btn-danger-text:#a33a3a;
+  --btn-danger-border:#f4cfcf;
+  --btn-ghost-bg:#eef6f3;
+  --btn-ghost-text:#0d4a3c;
+  --btn-ghost-border:#cfe8df;
 }
+
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:#111;font-family:system-ui,-apple-system,"PingFang TC","Noto Sans TC",Segoe UI,Roboto,Arial}
 h1,h2,h3{margin:0 0 8px}
@@ -12,11 +27,26 @@ h1 small{font-size:12px;color:var(--muted);margin-left:6px}
 .row3{display:grid;gap:12px;grid-template-columns:1fr 160px 1fr;margin:8px 0}
 .row4{display:grid;gap:12px;grid-template-columns:repeat(4,1fr);margin:8px 0}
 label{display:block;font-size:13px;color:#333;margin:4px 0}
-input,select,button{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff}
-input::placeholder{color:#aaa}
-.btn-primary{background:var(--deep);color:#fff;border:none}
-.btn-danger{background:#b3261e;color:#fff;border:none}
-.btn-ghost{background:#eef6f3;color:#0d4a3c;border:1px solid #cfe8df}
+input,select,button{width:100%;padding:10px;border-radius:10px;cursor:pointer}
+
+.btn-primary{
+  background:var(--btn-primary-bg);
+  color:var(--btn-primary-text);
+  border:1px solid rgba(0,0,0,0.05);
+}
+
+.btn-danger{
+  background:var(--btn-danger-bg);
+  color:var(--btn-danger-text);
+  border:1px solid var(--btn-danger-border);
+}
+
+.btn-ghost{
+  background:var(--btn-ghost-bg);
+  color:var(--btn-ghost-text);
+  border:1px solid var(--btn-ghost-border);
+}
+
 .pill{display:inline-block;background:#eef6f3;color:#0d4a3c;border:1px solid #cfe8df;border-radius:999px;padding:4px 10px;font-size:12px;margin-top:6px}
 .pill-alt{background:#f6f7fe;color:#243078;border-color:#dfe2ff}
 .pill-strong{background:#fef1a8;color:#6b4e00;border:1px solid #f7e27a}
