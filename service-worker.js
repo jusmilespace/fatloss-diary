@@ -1,5 +1,5 @@
 /* Ju Smile PWA Service Worker */
-const CACHE_NAME = 'jusmile-pwa-v3';
+const CACHE_NAME = 'jusmile-pwa-v4';
 const PRECACHE = [
   './',
   './index.html',
