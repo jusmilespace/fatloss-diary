@@ -19,6 +19,38 @@
     .row4{grid-template-columns:1fr 1fr 1fr 1fr}
     label{display:block;margin:2px 0 6px;font-weight:600;color:#334}
     input,select,button{width:100%;padding:10px;border:1px solid #dfe3e6;border-radius:10px;background:#fff}
+    /* 全站輸入欄位統一縮小 */
+input,
+select,
+button {
+  width: 100%;
+  max-width: 420px;      /* 限制最大寬度 */
+  box-sizing: border-box;
+  margin-right: auto;    /* 讓欄位靠左不置中 */
+}
+
+/* 讓外層容器也不被撐滿 */
+.row3 > div,
+.row4 > div {
+  align-items: flex-start; /* 靠左對齊，避免欄位置中 */
+}
+
+/* typeahead 輸入框（食物名稱搜尋）一樣限制寬度 */
+.typeahead {
+  max-width: 420px;
+}
+
+/* 📱 手機版維持滿版，避免太窄不好點 */
+@media (max-width: 640px) {
+  input,
+  select,
+  button,
+  .typeahead {
+    max-width: none;
+    width: 100%;
+  }
+}
+
     button{cursor:pointer}
     .btn-primary{background:var(--mint);color:#fff;border:1px solid rgba(0,0,0,.05)}
     .btn-ghost{background:#eef6f3;color:#0d4a3c;border:1px solid #cfe8df}
