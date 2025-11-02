@@ -67,4 +67,30 @@ input, select, button { min-height: 40px; }
 @media (max-width: 640px){
   .card { padding: 14px; }
 }
+/* 1. 針對所有 Grid 欄位（row3/row4 的直接子 div）進行排版優化 */
+/* 讓每個欄位內的 label 和 input 垂直堆疊，並擁有彈性，解決擠壓問題 */
+.row3 > div,
+.row4 > div {
+    /* 啟用 Flexbox 垂直堆疊 label 和 input */
+    display: flex;
+    flex-direction: column;
+    /* 增加垂直間距，避免內容過於緊密，特別是多行的內容 */
+    padding-bottom: 8px; 
+}
 
+/* 2. 確保輸入框下方的提示文字有獨立的間距 */
+.muted {
+    display: block; /* 讓 small 標籤獨佔一行 */
+    margin-top: 4px; /* 增加它與上方輸入框的間距 */
+}
+
+/* 3. 確保 typeahead 容器（用於食物名稱搜尋欄位）能夠填滿空間 */
+.typeahead {
+    flex-grow: 1; 
+}
+
+/* 4. 修正像「儲存目標/體重」這類按鈕在 Grid 欄位中的對齊問題 */
+/* 讓它能夠貼齊欄位底部 */
+.row4 > div:last-child button {
+    align-self: flex-end; 
+}
