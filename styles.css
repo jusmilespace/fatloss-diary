@@ -50,3 +50,21 @@ a:hover { text-decoration: underline; }
 @media (max-width: 640px) {
   .row3, .row4 { grid-template-columns: 1fr; }
 }
+/* 讓三/四欄容器自動換行、每格最小 220px */
+.row3, .row4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px; /* 欄與欄之間留白 */
+}
+/* 每個欄位內 label 和輸入控件有間距 */
+label { margin-bottom: 6px; }
+input, select, button { min-height: 40px; }
+
+/* 區塊底部按鈕列留空隙 */
+.section-actions { margin-top: 10px; }
+
+/* 手機再放大間距 */
+@media (max-width: 640px){
+  .card { padding: 14px; }
+}
+
