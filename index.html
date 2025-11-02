@@ -51,6 +51,20 @@
     @media (max-width: 640px){
       .row3, .row4 { grid-template-columns: 1fr; }
     }
+    /* 今日概況膠囊 */
+.summary-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.pill{border:1px solid #dfe3e6;border-radius:999px;padding:10px 14px;
+  background:#f6fbf9;color:#214;display:inline-flex;gap:6px;align-items:center}
+.pill b{font-weight:800;letter-spacing:0.5px}
+.pill.kcal{border-color:#cfe8df}
+.pill.pro{border-color:#cfe8df}
+.pill.carb{border-color:#cfe8df}
+.pill.fat{border-color:#cfe8df}
+.pill.ex{border-color:#cfe0ff;background:#f7f9ff}
+.pill.net{border-color:#f8e3c2;background:#fff9f0}
+.alert-text{margin-top:6px;color:#993c00;font-weight:600}
+.alert-text.ok{color:#0d4a3c;font-weight:500}
+
   </style>
 </head>
 <body>
@@ -76,6 +90,20 @@
         <button id="btnSaveTargets" class="btn-primary">儲存目標/體重</button>
       </div>
     </div>
+    <hr style="border:none;border-top:1px solid #eef2f4;margin:12px 0">
+
+<h3 style="margin:0 0 6px">今日概況</h3>
+<div class="summary-row">
+  <div class="pill kcal">攝取：<b id="sumKcalBadge">0</b> kcal</div>
+  <div class="pill pro">蛋白：<b id="sumPBadge">0</b> g</div>
+  <div class="pill carb">碳水：<b id="sumCBadge">0</b> g</div>
+  <div class="pill fat">脂肪：<b id="sumFBadge">0</b> g</div>
+  <div class="pill ex">運動消耗：<b id="exKcalBadge">0</b> kcal</div>
+  <div class="pill net">淨熱量：<b id="netKcalBadge">0</b> kcal</div>
+</div>
+
+<div id="badgeAlerts" class="alert-text"></div>
+
   </header>
 
   <section class="card">
